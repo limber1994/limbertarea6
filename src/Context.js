@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
-import datos from './data';
+//import datos from './data';
+import Client from './Contentful';
 const RoomContext = React.createContext();
 class RoomProvider extends Component{
     state={
@@ -17,6 +18,29 @@ class RoomProvider extends Component{
         desayuno:true,
         mascotas:false
     };
+    getData = async ()=>{
+        try{
+            let response = await Client.getEntries({
+                content_type:'datosHabitacion',
+                order: 'sys.createdAt'
+            });
+            let rooms = this.formatearDatos(response.items);
+            let roomsCaracteristicas = rooms.filter(room=>room.featured===true);
+            let precioMax = Math.max(...rooms.map(item=>item.price));
+            let tamanioMax = Math.max(...rooms.map(item=>item.size));
+            this.setState({
+                rooms,
+                roomsCaracteristicas,
+                roomsOrdenados:rooms,
+                loading:false,
+                precio: precioMax,
+                precioMax,
+                tamanioMax
+            });
+        } catch (error){
+            console.log(error)
+        }
+    }
     formatearDatos(items){
         let datosTmp = items.map(item=>{
             let id = item.sys.id;
@@ -27,19 +51,7 @@ class RoomProvider extends Component{
         return datosTmp;
     }
     componentDidMount(){
-        let rooms = this.formatearDatos(datos);
-        let roomsCaracteristicas = rooms.filter(room=>room.featured===true);
-        let precioMax = Math.max(...rooms.map(item=>item.price));
-        let tamanioMax = Math.max(...rooms.map(item=>item.size));
-        this.setState({
-            rooms,
-            roomsCaracteristicas,
-            roomsOrdenados:rooms,
-            loading:false,
-            precio: precioMax,
-            precioMax,
-            tamanioMax
-        });
+        this.getData();
     }
     getRoom = (slug)=>{
         let tempRooms = [...this.state.rooms];
